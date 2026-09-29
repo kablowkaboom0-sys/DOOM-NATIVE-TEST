@@ -1,0 +1,40 @@
+name: Import DOOM CRT source
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: "!contains(github.event.head_commit.message, 'Import DOOM CRT source')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Import source tree
+        run: |
+          git clone --depth 1 https://github.com/mattiasgustavsson/doom-crt.git /tmp/doom-crt
+          rsync -a --exclude='.git' --exclude='DOOM1.WAD' --exclude='doom.jpg' /tmp/doom-crt/ ./
+          cat > IMPORT-NOTES.md <<'EOF'
+          # DOOM CRT import
+
+          This repository contains the source tree from mattiasgustavsson/doom-crt.
+
+          The bundled DOOM1.WAD and screenshot image are intentionally not copied into
+          this public repository. Use a legally obtained Doom WAD when building/running
+          the port.
+
+          The source includes the WebAssembly/browser build path described by the
+          upstream project.
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Import DOOM CRT source" || exit 0
+          git push
